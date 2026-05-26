@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi MI-key V3.1 (SUPER FINAL)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #ffffff; 
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Kanvas Partikel Pink */
+        #particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Casing Device */
+        .device {
+            position: relative;
+            z-index: 10;
+            width: 300px;
+            height: 450px;
+            background: linear-gradient(145deg, #ffffff, #eef5ff);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 123, 255, 0.25), 0 0 25px rgba(0, 123, 255, 0.15); 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Layar Utama */
+        .screen {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        /* --- STATE 1: IDLE LOGO --- */
+        #view-idle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 0.3s;
+            padding: 20px;
+        }
+        
+        /* Animasi Denyut Logo (Pulsing) */
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.03); filter: brightness(1.1); }
+        }
+
+        #view-idle img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: transparent;
+            border-radius: 0;
+            margin-bottom: 10px;
+            animation: logoPulse 2s ease-in-out infinite;
+        }
+        .text-tap { 
+            position: absolute;
+            bottom: 20px;
+            color: #007BFF; 
+            font-weight: bold; 
+            font-size: 14px; 
+            animation: pulseText 1.5s infinite; 
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 10px;
+        }
+        
+        @keyframes pulseText {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.95); }
+        }
+
+        /* Efek Glitch Transition */
+        .glitch-anim {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-4px, 4px) }
+            40% { transform: translate(-4px, -4px) }
+            60% { transform: translate(4px, 4px) }
+            80% { transform: translate(4px, -4px) }
+            100% { transform: translate(0) }
+        }
+
+        /* --- STATE 2: QR CODE --- */
+        #view-qr {
+            position: absolute;
+            width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .qr-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+        /* QR Dibelah 2 */
+        .qr-half {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background-image: url('https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MI-Key-FINAL-QR-Simulasi');
+            background-size: 200px 200px;
+            background-repeat: no-repeat;
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.5s;
+        }
+        .qr-left { left: 0; background-position: left top; border-right: 1px dashed #007BFF; }
+        .qr-right { right: 0; background-position: right top; border-left: 1px dashed #007BFF; }
+
+        .split .qr-left { transform: translateX(-150px) rotate(-10deg); opacity: 0; }
+        .split .qr-right { transform: translateX(150px) rotate(10deg); opacity: 0; }
+
+        /* --- STATE 3: SUCCESS (LOCK OPEN) --- */
+        #view-success {
+            position: absolute;
+            display: flex;
+            flex-direction: column; 
+            align-items: center;
+            gap: 15px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        .success-active #view-success {
+            opacity: 1;
+            transform: scale(1);
+            transition-delay: 0.3s;
+        }
+        .lock-icon { width: 50px; height: 50px; fill: #007BFF; }
+        
+        /* Animasi Gembok Terbuka (Sekali Saja) */
+        .lock-shackle {
+            transform-origin: left bottom;
+            transition: transform 0.5s ease 0.8s;
+        }
+        .success-active .lock-shackle {
+            transform: translateY(-8px) rotate(-20deg); 
+        }
+        .success-text { color: #007BFF; font-size: 20px; font-weight: bold; text-align: center; }
+
+        /* --- STATE 4: LOCKED (KELUAR) --- */
+        #view-locked {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        .locked-active #view-locked {
+            opacity: 1;
+            transform: scale(1);
+            transition-delay: 0.3s; /* Tambahan delay biar barengan sama QR kebelah */
+        }
+        
+        /* Animasi Gembok Menutup */
+        .lock-shackle-close {
+            transform-origin: left bottom;
+            transform: translateY(-8px) rotate(-20deg); 
+            transition: transform 0.5s ease 0.6s; /* Sesuaikan timing biar pas */
+        }
+        .locked-active .lock-shackle-close {
+            transform: translateY(0) rotate(0deg); 
+        }
+        .locked-text { color: #d32f2f; font-size: 20px; font-weight: bold; text-align: center; }
+
+        /* Tombol Fisik Keluar Lab */
+        .exit-btn {
+            position: relative;
+            z-index: 10;
+            margin-top: 25px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .exit-btn:hover { background: #0056b3; transform: translateY(-2px); }
+        .exit-btn:active { transform: translateY(1px); }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="particles"></canvas>
+
+    <div class="device">
+        <div class="screen" id="screen" onclick="layarDitekan()">
+            
+            <div id="view-idle">
+                <img src="logo mi.png" alt="Logo MI" id="logo-img">
+                <p class="text-tap">Sentuh Layar</p>
+            </div>
+
+            <div id="view-qr">
+                <div class="qr-container" id="qr-container">
+                    <div class="qr-half qr-left"></div>
+                    <div class="qr-half qr-right"></div>
+                </div>
+            </div>
+
+            <div id="view-success">
+                <svg class="lock-icon" viewBox="0 0 24 24">
+                    <rect x="5" y="11" width="14" height="10" rx="2" ry="2"/>
+                    <path class="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="#007BFF" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <div class="success-text">Lab sudah terbuka</div>
+            </div>
+
+            <div id="view-locked">
+                <svg class="lock-icon" style="fill: #d32f2f;" viewBox="0 0 24 24">
+                    <rect x="5" y="11" width="14" height="10" rx="2" ry="2"/>
+                    <path class="lock-shackle-close" d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="#d32f2f" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <div class="locked-text">Pintu Lab<br>telah dikunci</div>
+            </div>
+
+        </div>
+    </div>
+
+    <button class="exit-btn" id="btn-physical-exit" onclick="tombolKeluarDitekan()">Tombol Keluar (Akhir Jadwal)</button>
+
+    <script>
+        // --- 1. LOGIKA ANIMASI UI ---
+        const viewIdle = document.getElementById('view-idle');
+        const viewQr = document.getElementById('view-qr');
+        const qrContainer = document.getElementById('qr-container');
+        const screen = document.getElementById('screen');
+        
+        let resetTimer;
+        let sedangProsesKeluar = false; 
+
+        function layarDitekan() {
+            if (viewIdle.style.display !== 'none') {
+                sedangProsesKeluar = false; 
+                bangunkanLayar();
+            } 
+            else if (viewQr.style.opacity === '1' && viewQr.style.pointerEvents === 'auto') {
+                if (sedangProsesKeluar) {
+                    eksekusiKunci(); 
+                } else {
+                    eksekusiBuka(); 
+                }
+            }
+        }
+
+        function bangunkanLayar() {
+            viewIdle.classList.add('glitch-anim');
+            
+            setTimeout(() => {
+                viewIdle.classList.remove('glitch-anim');
+                viewIdle.style.display = 'none';
+                
+                viewQr.style.opacity = '1';
+                viewQr.style.pointerEvents = 'auto'; 
+                
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(resetKeIdle, 20000);
+            }, 500); 
+        }
+
+        // --- ALUR MASUK ---
+        function eksekusiBuka() {
+            clearTimeout(resetTimer);
+            viewQr.style.pointerEvents = 'none'; 
+            screen.classList.remove('locked-active'); 
+            
+            qrContainer.classList.add('split');
+            screen.classList.add('success-active');
+
+            resetTimer = setTimeout(resetKeIdle, 10000); 
+        }
+
+        // --- ALUR KELUAR ---
+        function tombolKeluarDitekan() {
+            sedangProsesKeluar = true; 
+            resetKeStateQR();
+        }
+
+        function eksekusiKunci() {
+            clearTimeout(resetTimer);
+            viewQr.style.pointerEvents = 'none'; 
+
+            // INI TAMBAHANNYA BIAR QR TERBELAH SAAT KELUAR
+            qrContainer.classList.add('split'); 
+            
+            screen.classList.add('locked-active');
+
+            sedangProsesKeluar = false; 
+            resetTimer = setTimeout(resetKeIdle, 4000); 
+        }
+
+        function resetKeStateQR() {
+            qrContainer.classList.remove('split');
+            screen.classList.remove('success-active');
+            screen.classList.remove('locked-active');
+            viewIdle.style.display = 'none';
+
+            viewQr.style.opacity = '1';
+            viewQr.style.pointerEvents = 'auto';
+
+            clearTimeout(resetTimer);
+            resetTimer = setTimeout(resetKeIdle, 20000);
+        }
+
+        // Reset semua animasi
+        function resetKeIdle() {
+            sedangProsesKeluar = false; 
+            qrContainer.classList.remove('split');
+            screen.classList.remove('success-active');
+            screen.classList.remove('locked-active');
+            
+            viewQr.style.opacity = '0';
+            viewQr.style.pointerEvents = 'none';
+            
+            setTimeout(() => {
+                viewIdle.style.display = 'flex'; 
+                void viewIdle.offsetWidth; 
+                viewIdle.style.opacity = '1';
+            }, 300);
+        }
+
+        // --- 2. LOGIKA PARTIKEL PINK (CANVAS) ---
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let partikelArray = [];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        class Partikel {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 4 + 1;
+                this.speedY = Math.random() * -1.5 - 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.y += this.speedY;
+                if (this.y < 0) {
+                    this.y = canvas.height;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 105, 180, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function inisialisasiPartikel() {
+            partikelArray = [];
+            for (let i = 0; i < 50; i++) {
+                partikelArray.push(new Partikel());
+            }
+        }
+
+        function animasiPartikel() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < partikelArray.length; i++) {
+                partikelArray[i].update();
+                partikelArray[i].draw();
+            }
+            requestAnimationFrame(animasiPartikel);
+        }
+
+        inisialisasiPartikel();
+        animasiPartikel();
+
+    </script>
+</body>
+</html>
